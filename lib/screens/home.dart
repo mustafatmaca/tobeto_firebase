@@ -7,6 +7,7 @@ import 'package:firebase_example/screens/auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 
 final firebaseAuthInstance = FirebaseAuth.instance;
 final firebaseStorageInstance = FirebaseStorage.instance;
@@ -21,6 +22,7 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   final messageController = TextEditingController();
+  final DateFormat formatter = DateFormat('hh:mm dd/MM/yyyy');
   File? _pickedFile;
   String? _imageUrl;
   DateTime? date;
@@ -42,11 +44,18 @@ class _HomeState extends State<Home> {
     });
   }
 
+  Future<String> _getUserEmail(String userId) async {
+    final document = firebaseFireStoreInstance.collection("users").doc(userId);
+    final docSnapshot = await document.get();
+
+    print(docSnapshot.get('email'));
+
+    return docSnapshot.get('email');
+  }
+
   Future<List<Message>> _getMessages() async {
     final document =
         await firebaseFireStoreInstance.collection("messages").get();
-
-    print(document.docs.first.data());
 
     final messagesList =
         document.docs.map((e) => Message.fromJson(e.data())).toList();
@@ -148,6 +157,7 @@ class _HomeState extends State<Home> {
                       border: Border.all(width: 1, color: Colors.black),
                       borderRadius: BorderRadius.circular(8.0)),
                   height: MediaQuery.of(context).size.height * 0.65,
+                  width: MediaQuery.of(context).size.width * 0.9,
                   child: FutureBuilder(
                     future: _getMessages(),
                     builder: (context, snapshot) {
@@ -160,18 +170,48 @@ class _HomeState extends State<Home> {
                               return Align(
                                 alignment: Alignment.centerRight,
                                 child: Container(
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.45,
                                   margin: EdgeInsets.all(4.0),
                                   padding: EdgeInsets.all(4.0),
                                   decoration: BoxDecoration(
+                                      color: Colors.black12,
                                       border: Border.all(
                                           width: 1, color: Colors.black),
-                                      borderRadius: BorderRadius.circular(8.0)),
+                                      borderRadius: BorderRadius.only(
+                                          topRight: Radius.circular(8.0),
+                                          topLeft: Radius.circular(8.0),
+                                          bottomLeft: Radius.circular(8.0))),
                                   child: Column(
                                     children: [
-                                      Text(
-                                        snapshot.data![index].message,
-                                        style: TextStyle(fontSize: 16),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            snapshot.data![index].message,
+                                            style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ],
                                       ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                              style: TextStyle(fontSize: 10),
+                                              formatter
+                                                  .format(DateTime
+                                                      .fromMillisecondsSinceEpoch(
+                                                          snapshot
+                                                              .data![index]
+                                                              .date
+                                                              .millisecondsSinceEpoch))
+                                                  .toString()),
+                                        ],
+                                      )
                                     ],
                                   ),
                                 ),
@@ -180,15 +220,78 @@ class _HomeState extends State<Home> {
                               return Align(
                                 alignment: Alignment.centerLeft,
                                 child: Container(
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.45,
                                   margin: EdgeInsets.all(4.0),
                                   padding: EdgeInsets.all(4.0),
                                   decoration: BoxDecoration(
+                                      color: Colors.black12,
                                       border: Border.all(
                                           width: 1, color: Colors.black),
-                                      borderRadius: BorderRadius.circular(8.0)),
-                                  child: Text(
-                                    snapshot.data![index].message,
-                                    style: TextStyle(fontSize: 16),
+                                      borderRadius: BorderRadius.only(
+                                          topRight: Radius.circular(8.0),
+                                          topLeft: Radius.circular(8.0),
+                                          bottomRight: Radius.circular(8.0))),
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        children: [
+                                          FutureBuilder(
+                                            future: _getUserEmail(
+                                                snapshot.data![index].userId),
+                                            builder: (context, value) {
+                                              if (value.hasData) {
+                                                return Text(
+                                                  value.data!,
+                                                  style:
+                                                      TextStyle(fontSize: 10),
+                                                );
+                                              } else if (value.hasError) {
+                                                return Text(
+                                                  "Something went wrong",
+                                                  style:
+                                                      TextStyle(fontSize: 10),
+                                                );
+                                              }
+                                              return Text(
+                                                "Yükleniyor",
+                                                style: TextStyle(fontSize: 10),
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            snapshot.data![index].message,
+                                            style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ],
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                              style: TextStyle(fontSize: 10),
+                                              formatter
+                                                  .format(DateTime
+                                                      .fromMillisecondsSinceEpoch(
+                                                          snapshot
+                                                              .data![index]
+                                                              .date
+                                                              .millisecondsSinceEpoch))
+                                                  .toString()),
+                                        ],
+                                      )
+                                    ],
                                   ),
                                 ),
                               );
